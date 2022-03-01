@@ -4,12 +4,18 @@ use svg::node::element::path::Data;
 use svg::node::element::{Group, Path};
 use svg::Document;
 
+// Math Constants
 const SQRT_3: f64 = 1.73205080757;
 
+// Size Constants
 const HEX_WIDTH: f64 = 200.0;
 const HEX_RADIUS: f64 = (HEX_WIDTH / 2.0) * 2.0 / SQRT_3;
 
 const INNER_SPACE: f64 = 20.0;
+
+// Design Constants
+const TOP_WIDTH: i64 = 5;
+const HEIGHT: i64 = 3;
 
 // Returns data for a hexagon centered on (0, 0) with the given radius.
 // Flat sides are parallel to the y-axis.
@@ -51,26 +57,24 @@ impl Transformable for Group {
 }
 
 fn main() {
-    // let path1 = outline(hex_data(40.0, 5.0));
+    // Remember that the coordinate system is flipped for svg.
+    // We don't want to deal with that, so we'll introduce a mirrored group.
+    let w = 1400;
+    let h = 800;
 
-    let mut document = Document::new().set("viewBox", (-400, -400, 800, 800)); // x, y, w, h
+    let mut document = Document::new().set("viewBox", (0, 0, w, h)); // x, y, width, height
+    let mut mirror_group = Group::new().set("transform", format!("matrix(1,0,0,-1,0,{h})"));
 
-    for i in -1..=1 {
-        let path2 = outline(hex_data(HEX_RADIUS));
-        let g = Group::new()
-            .add(path2)
-            //.translate((i as f64) * (HEX_WIDTH + INNER_SPACE), 0.0);
-            .hex_translate(0, i);
-        document = document.add(g);
-
-        let path2 = outline(hex_data(HEX_RADIUS));
-        let g = Group::new()
-            .add(path2)
-            //.translate((i as f64) * (HEX_WIDTH + INNER_SPACE), 0.0);
-            .hex_translate(i, 0);
-        document = document.add(g);
+    for j in 0..HEIGHT {
+        for i in 0..(TOP_WIDTH - j) {
+            let path = outline(hex_data(HEX_RADIUS));
+            let g = Group::new().add(path).hex_translate(i + j, -j);
+            let g = Group::new().add(g).translate(200.0, 600.0);
+            mirror_group = mirror_group.add(g);
+        }
     }
 
+    document = document.add(mirror_group);
     svg::save("output/image.svg", &document).unwrap();
 
     println!("Hello, world!");
