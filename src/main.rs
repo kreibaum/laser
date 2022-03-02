@@ -22,19 +22,14 @@ const HEIGHT: i64 = 3;
 
 // Returns data for a hexagon centered on (0, 0) with the given radius.
 // Flat sides are parallel to the y-axis.
-#[allow(clippy::needless_range_loop)] // It is easier to read this way.
-fn hex_data(radius: f64) -> Data {
-    let mut hex_points: [(f64, f64); 12] = [(0.0, 0.0); 12];
-    for i in 0..12 {
-        let angle = i as f64 * PI / 3.0 + PI / 6.0;
-        hex_points[i] = (radius * angle.cos(), radius * angle.sin());
-    }
+fn hex_data() -> Data {
+    let hex_points = hex_points_array();
 
     let mut data = Data::new();
     data = data.move_to(lerp(hex_points[0], hex_points[1], CORNER_INSET_REL));
     for i in 1..7 {
         // Slightly shorter outer line where we substract relative corner inset.
-        let c1 = lerp(hex_points[i - 1], hex_points[i], (1.0 - CORNER_INSET_REL));
+        let c1 = lerp(hex_points[i - 1], hex_points[i], 1.0 - CORNER_INSET_REL);
         data = data.line_to(c1);
         // And now we already step into the next side.
         // But instead of line_to, we'll sweep with an arc.
@@ -43,6 +38,16 @@ fn hex_data(radius: f64) -> Data {
         data = data.elliptical_arc_to((INNER_SPACE, INNER_SPACE, 0.0, 0.0, 1.0, c2x, c2y));
     }
     data.close()
+}
+
+#[allow(clippy::needless_range_loop)] // It is easier to read this way.
+fn hex_points_array() -> [(f64, f64); 12] {
+    let mut hex_points: [(f64, f64); 12] = [(0.0, 0.0); 12];
+    for i in 0..12 {
+        let angle = i as f64 * PI / 3.0 + PI / 6.0;
+        hex_points[i] = (HEX_RADIUS * angle.cos(), HEX_RADIUS * angle.sin());
+    }
+    hex_points
 }
 
 fn lerp(a: (f64, f64), b: (f64, f64), t: f64) -> (f64, f64) {
@@ -86,7 +91,7 @@ fn main() {
 
     for j in 0..HEIGHT {
         for i in 0..(TOP_WIDTH - j) {
-            let path = outline(hex_data(HEX_RADIUS));
+            let path = outline(hex_data());
             let g = Group::new().add(path).hex_translate(i + j, -j);
             let g = Group::new().add(g).translate(200.0, 600.0);
             mirror_group = mirror_group.add(g);
